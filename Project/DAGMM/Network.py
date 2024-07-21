@@ -1,3 +1,4 @@
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -55,3 +56,5 @@ class DAGMM(nn.Module):
         z = torch.cat([z_c, rec_1.unsqueeze(-1), rec_2.unsqueeze(-1)], dim=1)
         gamma = self.estimate(z)
         return z_c, x_hat, z, gamma
+
+
