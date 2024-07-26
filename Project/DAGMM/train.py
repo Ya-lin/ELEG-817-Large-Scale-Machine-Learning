@@ -21,7 +21,7 @@ class ComputeLoss:
         sample_energy, cov_diag = self.compute_energy(z, gamma)
 
         loss = reconst_loss + self.lambda_energy * sample_energy + self.lambda_cov * cov_diag
-        return Variable(loss, requires_grad=True)
+        return loss
     
     def compute_energy(self, z, gamma, phi=None, mu=None, cov=None, sample_mean=True):
         """Computing the sample energy function"""
@@ -116,7 +116,7 @@ class TrainerDAGMM:
             loss = self.compute.forward(x, x_hat, z, gamma)
             loss.backward(retain_graph=True)
             torch.nn.utils.clip_grad_norm_(self.model.parameters(), 5)
-            optimizer.step()
+            self.optimizer.step()
             print('Training DAGMM... Epoch: {}, Loss: {:.3f}'.format(
                    epoch, loss.item()))
 
