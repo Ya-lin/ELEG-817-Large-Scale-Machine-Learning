@@ -3,7 +3,7 @@ import numpy as np
 import torch
 from torch import optim
 import torch.nn.functional as F
-from Network import DAGMM
+from network import DAGMM
 
 
 class ComputeLoss:
@@ -77,14 +77,16 @@ class ComputeLoss:
 
 class Cholesky(torch.autograd.Function):
     
+    @staticmethod
     def forward(ctx, a):
         l = torch.linalg.cholesky(a, upper=False)
         ctx.save_for_backward(l)
         return l
     
+    @staticmethod
     def backward(ctx, grad_output):
-        l, = ctx.saved_variables
-        linv = l.inverse()
+        l, = ctx.saved_tensors
+        linv = torch.linalg.inv(l)
         inner = torch.tril(torch.mm(l.t(), grad_output))*torch.tril(
                            1.0 - torch.diag(torch.full((l.size(1),), 0.5)))
         s = torch.mm(linv.t(), torch.mm(inner, linv))
@@ -94,23 +96,22 @@ class Cholesky(torch.autograd.Function):
 class TrainerDAGMM:
     """Trainer class for DAGMM."""
     
-    def __init__(self, args, data, device):
+    def __init__(self, args, data):
         self.args = args
         self.data = data
-        self.device = device
-
-    def train(self):
-        """Training the DAGMM model"""
-        self.model = DAGMM(self.args.n_gmm, self.args.latent_dim).to(self.device)
+        self.model = DAGMM(self.args.n_gmm, self.args.latent_dim).to(args.device)
         self.model.apply(weights_init_normal)
         self.optimizer = optim.Adam(self.model.parameters(), lr=self.args.lr)
 
         self.compute = ComputeLoss(self.model, self.args.lambda_energy, self.args.lambda_cov, 
-                                   self.device, self.args.n_gmm)
+                                   args.device, self.args.n_gmm)
+    def train(self):
+        """Training the DAGMM model"""
+        
         self.model.train()
         for epoch in range(self.args.num_epochs):
-            x = self.data.float().to(self.device)
-            optimizer.zero_grad()     
+            x = self.data.to(self.args.device)
+            self.optimizer.zero_grad()     
             _, x_hat, z, gamma = self.model(x)
             loss = self.compute.forward(x, x_hat, z, gamma)
             loss.backward(retain_graph=True)
@@ -136,4 +137,5 @@ def weights_init_normal(m):
     elif classname.find('BatchNorm') != -1:
         m.weight.data.normal_(1.0, 0.01)
         m.bias.data.fill_(0)
+    
 
