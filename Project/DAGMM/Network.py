@@ -1,4 +1,7 @@
 
+
+from pdb import set_trace  # convenient to debug code
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -29,15 +32,15 @@ class DAGMM(nn.Module):
         self.et2 = nn.Linear(10, n_gmm)
 
     def encode(self, x):
-        h,(_,_) = self.en1(x)
-        h,(_,_) = self.en2(h)
-        h,(_,_) = self.en3(h)
+        h, _ = self.en1(x)
+        h, _ = self.en2(h)
+        h, _ = self.en3(h)
         return h
 
     def decode(self, x):
-        h,(_,_) = self.de1(x)
-        h,(_,_) = self.de2(h)
-        h,(_,_) = self.de3(h)
+        h, _ = self.de1(x)
+        h, _ = self.de2(h)
+        h, _ = self.de3(h)
         return h
     
     def estimate(self, z):
@@ -45,6 +48,8 @@ class DAGMM(nn.Module):
         return F.softmax(self.et2(h), dim=1)
     
     def compute_reconstruction(self, x, x_hat):
+        x = x.flatten(start_dim=1)
+        x_hat = x_hat.flatten(start_dim=1)
         relative_euclidean_distance = (x-x_hat).norm(2, dim=1) / x.norm(2, dim=1)
         cosine_similarity = F.cosine_similarity(x, x_hat, dim=1)
         return relative_euclidean_distance, cosine_similarity
@@ -53,7 +58,10 @@ class DAGMM(nn.Module):
         z_c = self.encode(x)
         x_hat = self.decode(z_c)
         rec_1, rec_2 = self.compute_reconstruction(x, x_hat)
-        z = torch.cat([z_c, rec_1.unsqueeze(-1), rec_2.unsqueeze(-1)], dim=1)
+        # take the last time output
+        z_c_last = z_c[:,-1,:]
+        z = torch.cat([z_c_last, rec_1.unsqueeze(-1), rec_2.unsqueeze(-1)], dim=1)
         gamma = self.estimate(z)
         return z_c, x_hat, z, gamma
+
 
