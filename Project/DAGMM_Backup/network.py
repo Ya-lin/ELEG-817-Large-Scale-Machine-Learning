@@ -29,15 +29,15 @@ class DAGMM(nn.Module):
         self.et2 = nn.Linear(10, n_gmm)
 
     def encode(self, x):
-        h,_ = self.en1(x)
-        h,_ = self.en2(h)
-        h,_ = self.en3(h)
+        h, _ = self.en1(x)
+        h, _ = self.en2(h)
+        h, _ = self.en3(h)
         return h
 
     def decode(self, x):
-        h,_ = self.de1(x)
-        h,_ = self.de2(h)
-        h,_ = self.de3(h)
+        h, _ = self.de1(x)
+        h, _ = self.de2(h)
+        h, _ = self.de3(h)
         return h
     
     def estimate(self, z):
